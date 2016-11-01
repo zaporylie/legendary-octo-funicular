@@ -1,0 +1,89 @@
+version: '2'
+
+services:
+
+  build:
+    image: nymediaas/php:7.0-cli
+    command: rsync -av --chown=www-data:www-data /source/ ./
+    volumes:
+      - ./:/source
+
+  db:
+    image: drupaldocker/mariadb
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'True'
+    networks:
+      - back-tier
+
+  php:
+    image: drupaldocker/php:7.0-fpm
+    networks:
+      - back-tier
+      - front-tier
+    volumes_from:
+      - build
+    depends_on:
+      - db
+      - elasticsearch
+
+  app:
+    image: drupaldocker/nginx
+    networks:
+      - front-tier
+      - proxy
+    volumes_from:
+      - build
+    ports:
+      - 80
+    depends_on:
+      - php
+    environment:
+      - VIRTUAL_HOST
+      - DOCROOT=/var/www/html/web
+
+  elasticsearch:
+    image: drupaldocker/elasticsearch:1.5
+    networks:
+      - back-tier
+
+  # Run scripts in cli mode.
+  cli:
+    image: nymediaas/php:7.0-cli
+    networks:
+      - back-tier
+      - front-tier
+    volumes_from:
+      - build
+    depends_on:
+      - db
+      - elasticsearch
+
+  phantomjs:
+    image: zaporylie/test:phantomjs
+    networks:
+      - front-tier
+
+  test:
+    image: nymediaas/php:7.0-cli
+    command: composer test
+    networks:
+      - back-tier
+      - front-tier
+    volumes:
+      - ./artifacts:/var/www/html/tests/output
+    volumes_from:
+      - build
+    depends_on:
+      - app
+      - phantomjs
+    environment:
+      BEHAT_PARAMS: "{\"extensions\": {\"Behat\\\\MinkExtension\": {\"base_url\": \"http://app\"},\"Drupal\\\\DrupalExtension\": {\"drupal\": {\"drupal_root\": \"/var/www/html/drupal\"}}}}"
+
+networks:
+  front-tier:
+    driver: bridge
+  back-tier:
+    driver: bridge
+  proxy:
+    external:
+      name: nginx-proxy
