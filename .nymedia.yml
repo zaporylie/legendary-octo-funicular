@@ -1,0 +1,29 @@
+deploy:
+  # Copy cache.
+  - cp -r ${HOME}/.composer/cache .composer-cache
+  # Build codebase.
+  - docker-compose up build
+  # Run deployment script (may includes installation)
+  - docker-compose run --rm cli ./scripts/docker/deploy.sh
+  # Deploy app.
+  - VIRTUAL_HOST="$(shell basename $(PWD)).*" docker-compose up -d app
+  
+test:
+  # Copy cache.
+  - cp -r ${HOME}/.composer/cache .composer-cache
+  # Build codebase (download dependencies, etc.)
+  - docker-compose up build
+  # Run installation script.
+  - docker-compose run --rm cli ./scripts/docker/install.sh
+  # Run tests
+  - docker-compose run --rm test
+  
+clean:
+  # Clean everything including volumes.
+  - docker-compose down -v
+  
+options:
+  deploy:
+    # Which branch should be deployable - none by default.
+    branches:
+      - master
