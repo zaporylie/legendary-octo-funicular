@@ -7,7 +7,7 @@ deploy:
   - docker-compose run --rm cli ./scripts/docker/deploy.sh
   # Deploy app.
   - VIRTUAL_HOST="$(shell basename $(PWD)).*" docker-compose up -d app
-  
+
 test:
   # Copy cache.
   - cp -r ${HOME}/.composer/cache .composer-cache

@@ -1,0 +1,17 @@
+{
+    "name": "zaporylie/legendary-octo-funicular",
+    "type": "package",
+    "require": {
+        "drush/drush": "^8.1"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^2.7",
+        "drupal/coder": "^8.2"
+    },
+    "authors": [
+        {
+            "name": "zaporylie",
+            "email": "jakub@nymedia.no"
+        }
+    ]
+}
